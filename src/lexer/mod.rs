@@ -5,28 +5,54 @@ use std::str::Chars;
 
 use self::token::Token;
 
+/// The lexer in our language.
+///
+/// The lexer, also known as tokenizer, transforms the input text into tokens.
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
 }
 
 impl<'a> Lexer<'a> {
+    /// Create a new lexer.
+    ///
+    /// To build the lexer, you feed it a `str` with the code. Then you can use
+    /// the lexer as a normal `Iterator`, which iterates over [`Token`s][1].
+    ///
+    /// # Examples
+    ///
+    ///     use lang::lexer::Lexer;
+    ///     use lang::lexer::token::Token;
+    ///     
+    ///     let mut tokens = Lexer::new(": tipo");
+    ///     assert_eq!(tokens.next().unwrap(), Token::Colon);
+    ///     assert_eq!(tokens.next().unwrap(), Token::Type);
+    ///     assert_eq!(tokens.next(), None);
+    ///
+    /// [1]: token/enum.Token.html
     pub fn new(input: &'a str) -> Lexer {
         Lexer { input: input.chars().peekable() }
     }
 
+    /// The next char in the input, advances the internal iterator.
     fn read_char(&mut self) -> Option<char> {
         self.input.next()
     }
 
+    /// The next char in the input. *doesn't* advance the internal iterator.
     fn peek_char(&mut self) -> Option<&char> {
         self.input.peek()
     }
 
+    /// If an alphabetic char was found, keep reading chars to build a
+    /// identifier. Finally, look if it was a keyword.
     fn read_identifier(&mut self, ch: char) -> Token {
         let content = {
+            // Since in ::next_token we need to call ::read_char the first
+            // char was consumed, so we add it here.
             let mut content = String::new();
             content.push(ch);
 
+            // Keep building the string with allowed characters.
             while let Some(&ch) = self.peek_char() {
                 if !(ch.is_alphabetic() || ch.is_digit(10)) {
                     break;
@@ -40,12 +66,15 @@ impl<'a> Lexer<'a> {
             content
         };
 
+        // Match the identifier to all the known keywords to see if it is one
+        // of them. Otherwise, return a normal identifier.
         match &content[..] {
             "tipo" => Token::Type,
             _ => Token::Ident(content),
         }
     }
 
+    /// Advance the internal iterator when we find whitespace.
     fn consume_whitespace(&mut self) {
         while let Some(&ch) = self.peek_char() {
             if ch.is_whitespace() {
@@ -56,6 +85,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// The basis for the iterator, matches the characters to Tokens.
     fn next_token(&mut self) -> Token {
         self.consume_whitespace();
 
@@ -68,13 +98,15 @@ impl<'a> Lexer<'a> {
                 ',' => Token::Comma,
                 '\0' => Token::EOF,
                 _ => if ch.is_alphabetic() {
-                    // As `read_identifier` already increments the read position, we no
-                    // longer need `read_char` below, so we perform an early return.
+                    // As ::read_identifier already advances the iterator, we
+                    // can safely perform an early return.
                     return self.read_identifier(ch);
                 } else {
                     Token::Illegal
                 }
             }
+        // If the internal iterator has given us a None, that means there are no
+        // characters left. In other words, EOF was reached.
         } else {
             Token::EOF
         }
