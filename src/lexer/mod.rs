@@ -1,9 +1,37 @@
-pub mod token;
-
 use std::iter::Peekable;
 use std::str::Chars;
 
-use self::token::Token;
+/// Token types that our language admits.
+///
+/// All the token types that our little language will need. As it is a very
+/// simple language, it doesn't have many. The lexer takes an input and has a
+/// token iterator as the output.
+///
+/// The traits are mostly for tests.
+#[derive(Debug, PartialEq)]
+pub enum Token {
+    /// For anything that we don't recognize.
+    Illegal,
+    /// Last token, when the input has ended.
+    EOF,
+
+    /// Any word: a variable name, a type name...
+    Ident(String),
+
+    /// Left parenthesis.
+    ParL,
+    /// Right parenthesis.
+    ParR,
+    /// The ':' character.
+    Colon,
+    /// The ';' character.
+    Semicolon,
+    /// The ',' character.
+    Comma,
+
+    /// The only keyword we have in the language.
+    Type,
+}
 
 /// The lexer in our language.
 ///
@@ -20,15 +48,14 @@ impl<'a> Lexer<'a> {
     ///
     /// # Examples
     ///
-    ///     use lang::lexer::Lexer;
-    ///     use lang::lexer::token::Token;
-    ///     
+    ///     use lang::lexer::{Lexer, Token};
+    ///
     ///     let mut tokens = Lexer::new(": tipo");
     ///     assert_eq!(tokens.next().unwrap(), Token::Colon);
     ///     assert_eq!(tokens.next().unwrap(), Token::Type);
     ///     assert_eq!(tokens.next(), None);
     ///
-    /// [1]: token/enum.Token.html
+    /// [1]: enum.Token.html
     pub fn new(input: &'a str) -> Lexer {
         Lexer { input: input.chars().peekable() }
     }
