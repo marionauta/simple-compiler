@@ -1,6 +1,6 @@
-extern crate lang;
+extern crate simcom;
 
-use lang::lexer::{Lexer, Token};
+use simcom::lexer::{Lexer, Token};
 
 fn get_tokens(input: &str) -> Vec<Token> {
     Lexer::new(input).collect()

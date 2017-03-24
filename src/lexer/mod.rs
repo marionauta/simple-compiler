@@ -48,7 +48,7 @@ impl<'a> Lexer<'a> {
     ///
     /// # Examples
     ///
-    ///     use lang::lexer::{Lexer, Token};
+    ///     use simcom::lexer::{Lexer, Token};
     ///
     ///     let mut tokens = Lexer::new(": tipo");
     ///     assert_eq!(tokens.next().unwrap(), Token::Colon);

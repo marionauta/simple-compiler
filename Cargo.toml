@@ -1,6 +1,21 @@
 [package]
-name = "lang"
+name = "simple-compiler"
 version = "0.1.0"
-authors = ["Mario Nachbaur <marionauta@users.noreply.github.com>"]
+authors = ["Mario Nachbaur <mario.nachbaur@outlook.com>"]
 
-[dependencies]
+description = "Very simple lexer, parser and compiler"
+keywords = ["lexer", "parser", "compiler", "transpiler", "toy language"]
+readme = "README.md"
+
+repository = "https://github.com/marionauta/simple-compiler"
+license = "MIT"
+
+[lib]
+name = "simcom"
+
+[[bin]]
+name = "simple-compiler"
+doc = false
+
+[profile.release]
+lto = true
