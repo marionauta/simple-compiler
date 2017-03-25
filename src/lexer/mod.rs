@@ -1,3 +1,11 @@
+//! The lexer module.
+//!
+//! The simpler implementation of a lexer I could think of. It only takes a
+//! stream of characters and tansforms it into a tokens one.
+//!
+//! It doesn't keep track of the current line or column. In a real compiler that
+//! information is crucial when you write something wrong and don't know where.
+
 use std::iter::Peekable;
 use std::str::Chars;
 
