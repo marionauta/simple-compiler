@@ -33,7 +33,7 @@ pub fn parser<'a>(mut tokens: Peekable<Lexer<'a>>) -> Ast {
 /// Advances the iterator until a semicolon is found, consuming it.
 /// Also, if we find a 'None' value, we stop because otherwise we will get stuck
 /// in a never ending loop.
-fn advance_until_semicolon<'a>(mut tokens: &mut Peekable<Lexer<'a>>) {   
+fn advance_until_semicolon<'a>(mut tokens: &mut Peekable<Lexer<'a>>) {
     match tokens.next() {
         None | Some(Token::Semicolon) => (),
         _ => advance_until_semicolon(&mut tokens),
