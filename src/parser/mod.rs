@@ -40,6 +40,11 @@ fn advance_until_semicolon<'a>(mut tokens: &mut Peekable<Lexer<'a>>) {
     }
 }
 
+/// Matches an entire type definition. From Token::Type to Token::Semicolon.
+/// Returns an Ast::TypeDefinition if everything went ok. Otherwise we get the
+/// Token that was misplaced (thus unexpected).
+///
+/// TODO: Try to write this function a bit nicer.
 fn definition<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
     match tokens.next() {
         Some(Token::Type) => (),
@@ -47,6 +52,7 @@ fn definition<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
         None => return Err(Token::EOF),
     }
 
+    // Get the type's name from the first identifier.
     let name = match tokens.next() {
         Some(Token::Ident(name)) => name,
         Some(t) => return Err(t),
@@ -59,6 +65,7 @@ fn definition<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
         None => return Err(Token::EOF),
     }
 
+    // Fill a parameter vector with the different vectors we find.
     let mut pars = Vec::new();
     if let Err(t) = parameters(&mut tokens, &mut pars) {
         return Err(t);
@@ -134,6 +141,10 @@ mod test {
         (r, pars)
     }
 
+    fn get_definition(input: &str) -> ParseResult {
+        definition(&mut Lexer::new(input).peekable())
+    }
+
     #[test]
     fn semicolon1() {
         let mut tokens = Lexer::new("Hola ,,();  )").peekable();
@@ -164,6 +175,78 @@ mod test {
         advance_until_semicolon(&mut tokens);
 
         assert_eq!(tokens.next(), None);
+    }
+
+    #[test]
+    fn good_definition() {
+        let d = get_definition("tipo Punto(x: Punto);");
+
+        assert_eq!(d.unwrap(), Ast::TypeDefinition(
+            String::from("Punto"),
+            vec![Ast::Parameter(
+                String::from("x"),
+                String::from("Punto"),
+            )],
+        ));
+    }
+
+    #[test]
+    fn good_definition_many() {
+        let d = get_definition("tipo Punto(x: Punto, x: P, x: P);");
+
+        assert_eq!(d.unwrap(), Ast::TypeDefinition(
+            String::from("Punto"),
+            vec![
+                Ast::Parameter(
+                    String::from("x"),
+                    String::from("Punto"),
+                ),
+                Ast::Parameter(
+                    String::from("x"),
+                    String::from("P"),
+                ),
+                Ast::Parameter(
+                    String::from("x"),
+                    String::from("P"),
+                ),
+            ],
+        ));
+    }
+
+    #[test]
+    fn missing_keyword() {
+        let d = get_definition("tiipo Punto");
+        assert_eq!(d.unwrap_err(), Token::Ident(String::from("tiipo")));
+    }
+
+    #[test]
+    fn missing_identifier_definition() {
+        let d = get_definition("tipo (,,,");
+        assert_eq!(d.unwrap_err(), Token::ParL);
+    }
+
+    #[test]
+    fn missing_parenthesis() {
+        let d = get_definition("tipo x he");
+        assert_eq!(d.unwrap_err(), Token::Ident(String::from("he")));
+
+        let d = get_definition("tipo P(x: haha;");
+        assert_eq!(d.unwrap_err(), Token::Semicolon);
+    }
+
+    #[test]
+    fn missing_semicolon() {
+        let d = get_definition("tipo P(x: E)");
+        assert_eq!(d.unwrap_err(), Token::EOF);
+
+        let d = get_definition("tipo P(x: E) \n tipo");
+        assert_eq!(d.unwrap_err(), Token::Type);
+    }
+
+    #[test]
+    fn error_propagation() {
+        let d = get_definition("tipo Punto(x Punto);");
+        assert_eq!(d.unwrap_err(), Token::Ident(String::from("Punto")));
     }
 
     #[test]
