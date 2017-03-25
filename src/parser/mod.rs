@@ -41,23 +41,42 @@ fn advance_until_semicolon<'a>(mut tokens: &mut Peekable<Lexer<'a>>) {
 }
 
 fn definition<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
-    if let Some(Token::Type) = tokens.next() {
-        if let Some(Token::Ident(name)) = tokens.next() {
-            tokens.next(); // Skip the '('
-
-            let mut pars = Vec::new();
-            if let Err(t) = parameters(&mut tokens, &mut pars) {
-                return Err(t);
-            }
-
-            tokens.next(); // Skip the ')'
-            tokens.next(); // Skip the ';'
-
-            return Ok(Ast::TypeDefinition(name, pars));
-        }
+    match tokens.next() {
+        Some(Token::Type) => (),
+        Some(t) => return Err(t),
+        None => return Err(Token::EOF),
     }
 
-    Err(Token::Type)
+    let name = match tokens.next() {
+        Some(Token::Ident(name)) => name,
+        Some(t) => return Err(t),
+        None => return Err(Token::EOF),
+    };
+
+    match tokens.next() {
+        Some(Token::ParL) => (),
+        Some(t) => return Err(t),
+        None => return Err(Token::EOF),
+    }
+
+    let mut pars = Vec::new();
+    if let Err(t) = parameters(&mut tokens, &mut pars) {
+        return Err(t);
+    }
+
+    match tokens.next() {
+        Some(Token::ParR) => (),
+        Some(t) => return Err(t),
+        None => return Err(Token::EOF),
+    }
+
+    match tokens.next() {
+        Some(Token::Semicolon) => (),
+        Some(t) => return Err(t),
+        None => return Err(Token::EOF),
+    }
+
+    Ok(Ast::TypeDefinition(name, pars))
 }
 
 /// Matches a series of parameters, separated by a comma (Token::Comma).
