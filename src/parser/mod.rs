@@ -127,11 +127,11 @@ mod test {
         parameter(&mut Lexer::new(input).peekable())
     }
 
-    fn get_parameters(input: &str) -> Vec<Ast> {
+    fn get_parameters(input: &str) -> (ParseResult, Vec<Ast>) {
         let mut pars = Vec::new();
-        let _ = parameters(&mut Lexer::new(input).peekable(), &mut pars);
+        let r = parameters(&mut Lexer::new(input).peekable(), &mut pars);
 
-        pars
+        (r, pars)
     }
 
     #[test]
@@ -192,8 +192,9 @@ mod test {
 
     #[test]
     fn good_parameters() {
-        let ps = get_parameters("name: Type, other: othert");
+        let (res, ps) = get_parameters("name: Type, other: othert");
 
+        assert_eq!(res.unwrap(), Ast::Empty);
         assert_eq!(ps, vec![
             Ast::Parameter(
                 String::from("name"),
@@ -208,13 +209,25 @@ mod test {
 
     #[test]
     fn missing_comma() {
-        let ps = get_parameters("name: Type other: othert");
+        let (res, ps) = get_parameters("name: Type other: othert");
 
+        // Here the function doesn't report the next identifier token because
+        // it ends if it doesn't find any Token::Comma's. The unexpected "other"
+        // identifier will be reported by the ::definition function.
+        assert_eq!(res.unwrap(), Ast::Empty);
         assert_eq!(ps, vec![
             Ast::Parameter(
                 String::from("name"),
                 String::from("Type"),
             ),
         ]);
+    }
+
+    #[test]
+    fn missing_colon_parameters() {
+        let (res, _) = get_parameters("name Type, other: othert");
+
+        // Error propagates from ::parameter to ::parameters.
+        assert_eq!(res.unwrap_err(), Token::Ident(String::from("Type")));
     }
 }
