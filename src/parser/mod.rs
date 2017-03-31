@@ -4,7 +4,6 @@ use super::lexer::{Lexer, Token};
 
 #[derive(Debug, PartialEq)]
 pub enum Ast {
-    Program(Vec<Ast>),
     TypeDefinition(String, Vec<Ast>),
     Parameter(String, String),
     Unexpected(Token),
@@ -13,24 +12,47 @@ pub enum Ast {
 
 type ParseResult = Result<Ast, Token>;
 
-/// Parse a token stream into an AST.
-pub fn parser<'a>(mut tokens: Peekable<Lexer<'a>>) -> (Ast, bool) {
-    let mut definitions = Vec::new();
-    let mut had_errors = false;
+/// The parser in out language.
+///
+/// The parser transforms the input tokens into an AST.
+pub struct Parser<'a> {
+    tokens: Peekable<Lexer<'a>>,
+}
 
-    while let Some(_) = tokens.peek() {
-        match definition(&mut tokens) {
-            Ok(ast) => definitions.push(ast),
+impl<'a> Parser<'a> {
+    /// Create a new parser.
+    ///
+    /// To build the parser, you need a [`Lexer`][0] with tokens. Then you can
+    /// use the parser as a normal `Iterator`, wich iterates over [`Ast`s][1].
+    ///
+    /// # Examples
+    ///
+    ///     use simcom::lexer::{Lexer, Token};
+    ///     use simcom::parser::{Ast, Parser};
+    ///
+    ///     let mut parser = Parser::new(Lexer::new("? Hello World"));
+    ///     assert_eq!(parser.next().unwrap(), Ast::Unexpected(Token::Illegal));
+    ///
+    /// [0]: ../lexer/struct.Lexer.html
+    /// [1]: enum.Ast.html
+    pub fn new(tokens: Lexer<'a>) -> Parser {
+        Parser { tokens: tokens.peekable() }
+    }
+}
+
+impl <'a> Iterator for Parser<'a> {
+    type Item = Ast;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match definition(&mut self.tokens) {
+            Ok(ast) => Some(ast),
+            Err(Token::EOF) => None,
             Err(token) => {
-                println!("Unexpected {:?} token.", token);
-                had_errors = true;
-                definitions.push(Ast::Unexpected(token));
-                advance_until_semicolon(&mut tokens)
-            }
+                advance_until_semicolon(&mut self.tokens);
+                Some(Ast::Unexpected(token))
+            },
         }
     }
-
-    (Ast::Program(definitions), had_errors)
 }
 
 /// Advances the iterator until a semicolon is found, consuming it.
