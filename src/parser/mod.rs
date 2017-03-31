@@ -13,21 +13,24 @@ pub enum Ast {
 
 type ParseResult = Result<Ast, Token>;
 
-pub fn parser<'a>(mut tokens: Peekable<Lexer<'a>>) -> Ast {
+/// Parse a token stream into an AST.
+pub fn parser<'a>(mut tokens: Peekable<Lexer<'a>>) -> (Ast, bool) {
     let mut definitions = Vec::new();
+    let mut had_errors = false;
 
     while let Some(_) = tokens.peek() {
         match definition(&mut tokens) {
             Ok(ast) => definitions.push(ast),
             Err(token) => {
                 println!("Unexpected {:?} token.", token);
+                had_errors = true;
                 definitions.push(Ast::Unexpected(token));
                 advance_until_semicolon(&mut tokens)
             }
         }
     }
 
-    Ast::Program(definitions)
+    (Ast::Program(definitions), had_errors)
 }
 
 /// Advances the iterator until a semicolon is found, consuming it.
