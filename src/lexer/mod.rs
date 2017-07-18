@@ -133,9 +133,9 @@ impl<'a> Lexer<'a> {
                 ',' => Token::Comma,
                 '\0' => Token::EOF,
                 _ => if ch.is_alphabetic() {
-                    // As ::read_identifier already advances the iterator, we
-                    // can safely perform an early return.
-                    return self.read_identifier(ch);
+                    // Read the remainder part of the identifier, passing its
+                    // first character, as we already read it.
+                    self.read_identifier(ch)
                 } else {
                     Token::Illegal
                 }
