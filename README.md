@@ -34,6 +34,15 @@ typedef struct Circulo {
 Note that the order in the input language doesn't matter, it will produce C code
 that compiles nicely.
 
+## Installing
+
+To build `simple-compiler` you need:
+
+- Rust `1.17.0` or better.
+- Cargo
+
+And just run `cargo build --release`
+
 ## Inspiration
 
 * [**The Super Tiny Compiler**][2]: Inspired me to do this.
