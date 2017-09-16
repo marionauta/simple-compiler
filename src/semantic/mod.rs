@@ -47,7 +47,7 @@ impl SemanticBuilder {
         }
     }
 
-    pub fn visit(&mut self, node: &String) {
+    fn visit(&mut self, node: &String) {
         if self.order.contains(node) {
             return;
 
