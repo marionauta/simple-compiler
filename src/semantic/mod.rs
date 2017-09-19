@@ -138,10 +138,8 @@ impl SemanticBuilder {
             }
         }
 
-        if !self.cycles.contains(node) {
-            self.order.push(node.clone());
-            self.visited.remove(node);
-        }
+        self.order.push(node.clone());
+        self.visited.remove(node);
     }
 }
 
@@ -156,4 +154,89 @@ fn build_parameters(ast: Vec<Ast>) -> Vec<(String, String)> {
     ast.into_iter()
         .filter_map(ast_to_parameter)
         .collect()
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::lexer::*;
+    use super::super::parser::*;
+    use super::*;
+
+    fn get_semantic(content: &str) -> Result<Semantic, UnexpectedTokens> {
+        Semantic::analyze(Parser::new(Lexer::new(content)))
+    }
+
+    #[test]
+    fn order_ok() {
+        let content = "tipo A(x: long);\
+        tipo B(a: A);";
+
+        let a = get_semantic(content).unwrap();
+
+        assert_eq!(a.order[0], String::from("long"));
+        assert_eq!(a.order[1], String::from("A"));
+        assert_eq!(a.order[2], String::from("B"));
+    }
+
+    #[test]
+    fn cycle() {
+        let content = "tipo A(x: B);\
+        tipo B (x: A);";
+
+        let s = get_semantic(content).unwrap();
+
+        assert!(s.cycles.contains("A"));
+        assert!(s.cycles.contains("B"));
+    }
+
+    #[test]
+    fn cycle_order_1() {
+        let content = "tipo A(x: B);\
+        tipo B(x: A);\
+        tipo C(a: A, b: B);";
+
+        let s = get_semantic(content).unwrap();
+
+        assert_eq!(s.order[2], String::from("C"));
+        assert!(s.cycles.contains("A"));
+        assert!(s.cycles.contains("B"));
+    }
+
+    #[test]
+    fn cycle_order_2() {
+        let content = "tipo A(x: B, c: C);\
+        tipo B(x: A);";
+
+        let s = get_semantic(content).unwrap();
+
+        let t_b = String::from("B");
+        let t_c = String::from("C");
+
+        let assert = s.order[0] == t_c || (s.order[0] == t_b && s.order[1] == t_c);
+
+        assert!(assert);
+        assert!(s.cycles.contains("A"));
+        assert!(s.cycles.contains(&t_b));
+    }
+
+    #[test]
+    fn cycle_order_3() {
+        let content = "tipo C(a: A);\
+        tipo A(b: B);\
+        tipo B(a: A);";
+
+        let s = get_semantic(content).unwrap();
+
+        let t_a = String::from("A");
+        let t_b = String::from("B");
+        let t_c = String::from("C");
+
+        let assert_1 = s.order == vec![t_a.clone(), t_b.clone(), t_c.clone()];
+        let assert_2 = s.order == vec![t_a.clone(), t_c.clone(), t_b.clone()];
+        let assert_3 = s.order == vec![t_b.clone(), t_a.clone(), t_c.clone()];
+
+        assert!(assert_1 || assert_2 || assert_3);
+        assert!(s.cycles.contains(&t_a));
+        assert!(s.cycles.contains(&t_b));
+    }
 }
