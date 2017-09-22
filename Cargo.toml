@@ -13,9 +13,5 @@ license = "MIT"
 [lib]
 name = "simcom"
 
-[[bin]]
-name = "simple-compiler"
-doc = false
-
 [profile.release]
 lto = true
