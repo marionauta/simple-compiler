@@ -134,7 +134,7 @@ fn parameters(mut tokens: &mut Peekable<Lexer>,
 
 /// Matches a parameter (the ones inside the type definition's parenthesis).
 /// Has the form (Token::Ident, Token::Colon, Token::Ident).
-fn parameter(mut tokens: &mut Peekable<Lexer>) -> ParseResult {
+fn parameter(tokens: &mut Peekable<Lexer>) -> ParseResult {
     match tokens.next() {
         Some(Token::Ident(name)) => match tokens.next() {
             Some(Token::Colon) => match tokens.next() {
