@@ -48,7 +48,7 @@ pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
 }
 
-impl<'a> Lexer<'a> {
+impl Lexer<'_> {
     /// Create a new lexer.
     ///
     /// To build the lexer, you feed it a `str` with the code. Then you can use
@@ -64,7 +64,7 @@ impl<'a> Lexer<'a> {
     ///     assert_eq!(tokens.next(), None);
     ///
     /// [1]: enum.Token.html
-    pub fn new(input: &'a str) -> Lexer {
+    pub fn new(input: &'_ str) -> Lexer {
         Lexer { input: input.chars().peekable() }
     }
 
@@ -148,7 +148,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-impl<'a> Iterator for Lexer<'a> {
+impl Iterator for Lexer<'_> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {

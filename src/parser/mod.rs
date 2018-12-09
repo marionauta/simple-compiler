@@ -19,7 +19,7 @@ pub struct Parser<'a> {
     tokens: Peekable<Lexer<'a>>,
 }
 
-impl<'a> Parser<'a> {
+impl Parser<'_> {
     /// Create a new parser.
     ///
     /// To build the parser, you need a [`Lexer`][0] with tokens. Then you can
@@ -35,12 +35,12 @@ impl<'a> Parser<'a> {
     ///
     /// [0]: ../lexer/struct.Lexer.html
     /// [1]: enum.Ast.html
-    pub fn new(tokens: Lexer<'a>) -> Parser {
+    pub fn new(tokens: Lexer) -> Parser {
         Parser { tokens: tokens.peekable() }
     }
 }
 
-impl <'a> Iterator for Parser<'a> {
+impl Iterator for Parser<'_> {
     type Item = Ast;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -58,7 +58,7 @@ impl <'a> Iterator for Parser<'a> {
 /// Advances the iterator until a semicolon is found, consuming it.
 /// Also, if we find a 'None' value, we stop because otherwise we will get stuck
 /// in a never ending loop.
-fn advance_until_semicolon<'a>(mut tokens: &mut Peekable<Lexer<'a>>) {
+fn advance_until_semicolon(mut tokens: &mut Peekable<Lexer>) {
     match tokens.next() {
         None | Some(Token::Semicolon) => (),
         _ => advance_until_semicolon(&mut tokens),
@@ -70,7 +70,7 @@ fn advance_until_semicolon<'a>(mut tokens: &mut Peekable<Lexer<'a>>) {
 /// Token that was misplaced (thus unexpected).
 ///
 /// TODO: Try to write this function a bit nicer.
-fn definition<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
+fn definition(mut tokens: &mut Peekable<Lexer>) -> ParseResult {
     match tokens.next() {
         Some(Token::Type) => (),
         Some(t) => return Err(t),
@@ -115,7 +115,7 @@ fn definition<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
 ///
 /// Fills the passed 'res' vector. Return is Err(_) when an unexpected token was
 /// found or when the 'tokens' iterator ends.
-fn parameters<'a>(mut tokens: &mut Peekable<Lexer<'a>>,
+fn parameters(mut tokens: &mut Peekable<Lexer>,
     mut res: &mut Vec<Ast>) -> ParseResult {
 
     match parameter(tokens) {
@@ -134,7 +134,7 @@ fn parameters<'a>(mut tokens: &mut Peekable<Lexer<'a>>,
 
 /// Matches a parameter (the ones inside the type definition's parenthesis).
 /// Has the form (Token::Ident, Token::Colon, Token::Ident).
-fn parameter<'a>(mut tokens: &mut Peekable<Lexer<'a>>) -> ParseResult {
+fn parameter(mut tokens: &mut Peekable<Lexer>) -> ParseResult {
     match tokens.next() {
         Some(Token::Ident(name)) => match tokens.next() {
             Some(Token::Colon) => match tokens.next() {
