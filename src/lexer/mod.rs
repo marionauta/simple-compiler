@@ -93,9 +93,10 @@ impl Lexer<'_> {
                     break;
                 }
 
-                // We call ::unwrap because we already made sure there is an
-                // element with the ::peek above.
-                content.push(self.read_char().unwrap());
+                // We consume the character we previously peeked. Then push it
+                // to the string we're building.
+                self.read_char();
+                content.push(ch);
             }
 
             content
