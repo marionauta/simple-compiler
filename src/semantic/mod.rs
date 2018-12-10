@@ -87,9 +87,9 @@ impl Semantic {
             }
         }
 
-        match errors.is_empty() {
-            true => SemanticBuilder::build(definitions),
-            false => Err(errors),
+        match errors.len() {
+            0 => SemanticBuilder::build(definitions),
+            _ => Err(errors),
         }
     }
 }
