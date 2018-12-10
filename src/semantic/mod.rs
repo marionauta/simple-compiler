@@ -73,7 +73,7 @@ impl Semantic {
     ///     panic!("Wrong if/else branch!");
     /// }
     /// ```
-    pub fn analyze(ast: Parser) -> Result<Semantic, UnexpectedTokens> {
+    pub fn analyze(ast: Parser) -> Result<Self, UnexpectedTokens> {
         let mut definitions = HashMap::new();
         let mut errors = Vec::new();
 
@@ -104,7 +104,7 @@ struct SemanticBuilder {
 
 impl SemanticBuilder {
     fn build(definitions: HashMap<String, Vec<(String, String)>>) -> Result<Semantic, UnexpectedTokens> {
-        let mut sb = SemanticBuilder {
+        let mut sb = Self {
             definitions,
             order: Vec::new(),
             visited: HashSet::new(),
