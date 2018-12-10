@@ -38,7 +38,7 @@ that compiles nicely.
 
 To build `simple-compiler` you need:
 
-- Rust `1.17.0` or better.
+- Rust `1.31.0` or better.
 - Cargo
 
 And just run `cargo build --release`
