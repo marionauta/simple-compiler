@@ -65,27 +65,37 @@ impl Lexer<'_> {
     ///
     /// [1]: enum.Token.html
     pub fn new(input: &'_ str) -> Lexer {
-        Lexer { input: input.chars().peekable() }
-    }
-
-    /// The next char in the input, advances the internal iterator.
-    fn read_char(&mut self) -> Option<char> {
-        self.input.next()
+        Lexer {
+            input: input.chars().peekable(),
+        }
     }
 
     /// The next char in the input. *doesn't* advance the internal iterator.
+    #[inline]
     fn peek_char(&mut self) -> Option<&char> {
         self.input.peek()
     }
 
+    /// The next char in the input, advances the internal iterator.
+    #[inline]
+    fn read_char(&mut self) -> Option<char> {
+        self.input.next()
+    }
+
+    /// Advances the internal ierator.
+    #[inline]
+    fn consume_char(&mut self) {
+        self.read_char();
+    }
+
     /// If an alphabetic char was found, keep reading chars to build a
     /// identifier. Finally, look if it was a keyword.
-    fn read_identifier(&mut self, ch: char) -> Token {
+    fn read_identifier(&mut self, first_character: char) -> Token {
         let content = {
             // Since in ::next_token we need to call ::read_char the first
             // char was consumed, so we add it here.
             let mut content = String::new();
-            content.push(ch);
+            content.push(first_character);
 
             // Keep building the string with allowed characters.
             while let Some(&ch) = self.peek_char() {
@@ -95,7 +105,7 @@ impl Lexer<'_> {
 
                 // We consume the character we previously peeked. Then push it
                 // to the string we're building.
-                self.read_char();
+                self.consume_char();
                 content.push(ch);
             }
 
@@ -124,27 +134,20 @@ impl Lexer<'_> {
     /// The basis for the iterator, matches the characters to Tokens.
     fn next_token(&mut self) -> Token {
         self.consume_whitespace();
-
-        if let Some(ch) = self.read_char() {
-            match ch {
-                '(' => Token::ParL,
-                ')' => Token::ParR,
-                ':' => Token::Colon,
-                ';' => Token::Semicolon,
-                ',' => Token::Comma,
-                '\0' => Token::EOF,
-                _ => if ch.is_alphabetic() {
-                    // Read the remainder part of the identifier, passing its
-                    // first character, as we already read it.
-                    self.read_identifier(ch)
-                } else {
-                    Token::Illegal
-                }
-            }
-        // If the internal iterator has given us a None, that means there are no
-        // characters left. In other words, EOF was reached.
-        } else {
-            Token::EOF
+        match self.read_char() {
+            Some('(') => Token::ParL,
+            Some(')') => Token::ParR,
+            Some(':') => Token::Colon,
+            Some(';') => Token::Semicolon,
+            Some(',') => Token::Comma,
+            Some('\0') => Token::EOF,
+            // Read the remaining part of the identifier, passing its
+            // first character, as we already consumed it.
+            Some(ch) if ch.is_alphabetic() => self.read_identifier(ch),
+            Some(_) => Token::Illegal,
+            // If the internal iterator has given us a None, that means there are no
+            // characters left. In other words, EOF was reached.
+            None => Token::EOF,
         }
     }
 }
