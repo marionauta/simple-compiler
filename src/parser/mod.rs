@@ -92,11 +92,10 @@ impl Parser<'_> {
             None => return Err(Token::EOF),
         }
 
-        // Fill a parameter vector with the different vectors we find.
-        let mut pars = Vec::new();
-        if let Err(t) = self.parse_parameters(&mut pars) {
-            return Err(t);
-        }
+        let parameters = match self.parse_parameters() {
+            Ok(parameters) => parameters,
+            Err(token) => return Err(token),
+        };
 
         match self.read_token() {
             Some(Token::ParR) => (),
@@ -110,27 +109,33 @@ impl Parser<'_> {
             None => return Err(Token::EOF),
         }
 
-        Ok(Ast::TypeDefinition(name, pars))
+        Ok(Ast::TypeDefinition(name, parameters))
     }
 
     /// Matches a series of parameters, separated by a comma (Token::Comma).
     ///
-    /// Fills the passed 'res' vector. Return is Err(_) when an unexpected token
-    /// was found or when the 'tokens' iterator ends.
-    fn parse_parameters(&mut self, res: &mut Vec<Ast>) -> ParseResult {
-        match self.parse_parameter() {
-            Ok(x) => res.push(x),
+    /// Return is Err(Token) when an unexpected token was found or when the
+    /// internal 'tokens' iterator ends.
+    fn parse_parameters(&mut self) -> Result<Vec<Ast>, Token> {
+        let parameter = match self.parse_parameter() {
+            Ok(parameter) => parameter,
             Err(token) => return Err(token),
-        }
+        };
         match self.peek_token() {
             Some(Token::Comma) => {
                 self.consume_token();
                 match self.peek_token() {
-                    Some(Token::ParR) => Ok(Ast::Empty),
-                    _ => self.parse_parameters(res),
+                    Some(Token::ParR) => Ok(vec![parameter]),
+                    _ => match self.parse_parameters() {
+                        Ok(mut parameters) => {
+                            parameters.insert(0, parameter);
+                            Ok(parameters)
+                        }
+                        Err(token) => Err(token),
+                    },
                 }
             }
-            _ => Ok(Ast::Empty),
+            _ => Ok(vec![parameter]),
         }
     }
 
@@ -182,12 +187,9 @@ mod test {
         parser.parse_parameter()
     }
 
-    fn get_parameters(input: &str) -> (ParseResult, Vec<Ast>) {
+    fn get_parameters(input: &str) -> Result<Vec<Ast>, Token> {
         let mut parser = get_parser(input);
-        let mut pars = Vec::new();
-        let r = parser.parse_parameters(&mut pars);
-
-        (r, pars)
+        parser.parse_parameters()
     }
 
     fn get_definition(input: &str) -> ParseResult {
@@ -345,11 +347,9 @@ mod test {
 
     #[test]
     fn good_parameters() {
-        let (res, ps) = get_parameters("name: Type, other: othert");
-
-        assert_eq!(res.unwrap(), Ast::Empty);
+        let result = get_parameters("name: Type, other: othert");
         assert_eq!(
-            ps,
+            result.unwrap(),
             vec![
                 Ast::Parameter(String::from("name"), String::from("Type"),),
                 Ast::Parameter(String::from("other"), String::from("othert"),),
@@ -359,23 +359,20 @@ mod test {
 
     #[test]
     fn missing_comma() {
-        let (res, ps) = get_parameters("name: Type other: othert");
-
+        let result = get_parameters("name: Type other: othert");
         // Here the function doesn't report the next identifier token because
         // it ends if it doesn't find any Token::Comma's. The unexpected "other"
         // identifier will be reported by the ::definition function.
-        assert_eq!(res.unwrap(), Ast::Empty);
         assert_eq!(
-            ps,
+            result.unwrap(),
             vec![Ast::Parameter(String::from("name"), String::from("Type"),),]
         );
     }
 
     #[test]
     fn missing_colon_parameters() {
-        let (res, _) = get_parameters("name Type, other: othert");
-
+        let result = get_parameters("name Type, other: othert");
         // Error propagates from ::parameter to ::parameters.
-        assert_eq!(res.unwrap_err(), Token::Ident(String::from("Type")));
+        assert_eq!(result.unwrap_err(), Token::Ident(String::from("Type")));
     }
 }
