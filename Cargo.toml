@@ -1,6 +1,7 @@
 [package]
 name = "simple-compiler"
 version = "0.1.0"
+edition = "2021"
 authors = ["Mario Nachbaur <mario.nachbaur@outlook.com>"]
 
 description = "Very simple lexer, parser and compiler"
